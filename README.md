@@ -46,15 +46,15 @@ construara_1/
 ├── models.py               # Definição dos modelos do banco de dados (Cliente, Andaime, Locacao, LocacaoAndaime)
 
 ├── templates/              # Contém os arquivos HTML (páginas web)
-│   ├── index.html          # Página principal: Formulário de registro de locação
-│   └── locacoes.html       # Página para visualizar todas as locações
+    │   ├── index.html          # Página principal: Formulário de registro de locação
+    │   └── locacoes.html       # Página para visualizar todas as locações
 
 ├── static/                 # Contém arquivos estáticos (CSS, JavaScript)
-│   ├── css/
-│   │   └── style.css       # Estilos CSS globais para as páginas
-│   └── js/
-│       ├── script.js       # Lógica JavaScript para o formulário de registro de locação (index.html)
-│       └── locacoes.js     # Lógica JavaScript para a página de visualização de locações (locacoes.html)
+    │   ├── css/
+    │   │   └── style.css       # Estilos CSS globais para as páginas
+    │   └── js/
+    │       ├── script.js       # Lógica JavaScript para o formulário de registro de locação (index.html)
+    │       └── locacoes.js     # Lógica JavaScript para a página de visualização de locações (locacoes.html)
 
 ├── construara_1.db         # Banco de dados SQLite (gerado automaticamente)
 

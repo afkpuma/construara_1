@@ -40,19 +40,26 @@ O **construara_1** é um sistema simplificado para gerenciar a locação e devol
 
 construara_1/
 ├── app.py                  # Aplicação Flask principal, rotas e inicialização
+
 ├── extensions.py           # Inicializa o objeto SQLAlchemy (db)
+
 ├── models.py               # Definição dos modelos do banco de dados (Cliente, Andaime, Locacao, LocacaoAndaime)
+
 ├── templates/              # Contém os arquivos HTML (páginas web)
 │   ├── index.html          # Página principal: Formulário de registro de locação
 │   └── locacoes.html       # Página para visualizar todas as locações
+
 ├── static/                 # Contém arquivos estáticos (CSS, JavaScript)
 │   ├── css/
 │   │   └── style.css       # Estilos CSS globais para as páginas
 │   └── js/
 │       ├── script.js       # Lógica JavaScript para o formulário de registro de locação (index.html)
 │       └── locacoes.js     # Lógica JavaScript para a página de visualização de locações (locacoes.html)
+
 ├── construara_1.db         # Banco de dados SQLite (gerado automaticamente)
+
 ├── .gitignore              # Ignora arquivos e pastas que não devem ser versionados (ex: .venv, .pyc, .db)
+
 └── README.md               # Este arquivo de documentação
 
 

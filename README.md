@@ -51,6 +51,7 @@ construara_1/
     │   └── locacoes.html       # Página para visualizar todas as locações
 
 ├── static/                 # Contém arquivos estáticos (CSS, JavaScript)
+
     │   ├── css/
     │   │   └── style.css       # Estilos CSS globais para as páginas
     │   └── js/

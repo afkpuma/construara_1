@@ -1,84 +1,123 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime # Para trabalhar com datas e horas
+# Removido: from datetime import datetime (agora é importado em models.py)
 
 app = Flask(__name__)
 
 # --- Configuração do Banco de Dados SQLite ---
-# Define o URI do banco de dados. 'sqlite:///site.db' cria um arquivo 'site.db' na mesma pasta do app.py
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///construara_1.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Desativa o rastreamento de modificações para economizar memória
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app) # Inicializa o SQLAlchemy com o aplicativo Flask
+db = SQLAlchemy(app)
 
-# --- Definição dos Modelos do Banco de Dados ---
+# --- Importa os Modelos do Banco de Dados ---
+# É importante importar *todos* os modelos aqui para que o SQLAlchemy os reconheça
+# quando for criar as tabelas com db.create_all()
+# ... (código existente do app.py, incluindo imports e configuração do db) ...
 
-# Tabela clientes
-class Cliente(db.Model):
-    __tablename__ = 'clientes' # Nome da tabela no banco de dados
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False) # String para TEXT, 100 caracteres max
-    endereco = db.Column(db.String(200))
-    telefone = db.Column(db.String(20), nullable=False)
+# Importa os Modelos do Banco de Dados
+from models import Cliente, Andaime, Locacao, LocacaoAndaime # Importa os modelos do seu novo arquivo
+# ... (suas rotas existentes: '/', '/status', '/echo', '/user/<int:user_id>') ...
 
-    # Relacionamento com Locacoes: um cliente pode ter muitas locacoes
-    locacoes = db.relationship('Locacao', backref='cliente', lazy=True)
+@app.route('/registrar_venda', methods=['POST'])
+def registrar_venda():
+    """
+    Rota para registrar uma nova venda/locação de andaimes no banco de dados.
+    Recebe dados em formato JSON.
+    """
+    data = request.get_json() # Pega os dados JSON enviados na requisição
 
-    def __repr__(self):
-        return f"Cliente('{self.nome}', '{self.telefone}')"
+    # --- Validação básica de dados (melhorar futuramente!) ---
+    # É uma boa prática validar *todos* os campos, mas para começar, validamos os essenciais.
+    required_fields = ['nome_cliente', 'telefone_cliente', 'data_inicio_locacao', 
+                       'dias_locacao', 'valor_total', 'status_pagamento', 'codigos_andaimes']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Campo '{field}' é obrigatório."}), 400
 
-# Tabela andaimes
-class Andaime(db.Model):
-    __tablename__ = 'andaimes'
-    id = db.Column(db.Integer, primary_key=True)
-    codigo = db.Column(db.String(50), unique=True, nullable=False)
-    descricao = db.Column(db.String(200))
-    status = db.Column(db.String(50), nullable=False, default='disponivel') # 'disponivel', 'alugado', 'manutencao'
+    try:
+        # 1. Encontrar ou Criar Cliente
+        # Busca por um cliente existente pelo nome e telefone (assumindo que seja uma combinação única o suficiente para fins de teste)
+        cliente = Cliente.query.filter_by(
+            nome=data['nome_cliente'], 
+            telefone=data['telefone_cliente']
+        ).first()
 
-    # Relacionamento com LocacaoAndaime (tabela de junção)
-    locacoes_associadas = db.relationship('LocacaoAndaime', backref='andaime', lazy=True)
+        if not cliente:
+            # Se o cliente não existir, cria um novo
+            cliente = Cliente(
+                nome=data['nome_cliente'],
+                endereco=data.get('endereco_cliente'), # .get() para campos opcionais
+                telefone=data['telefone_cliente']
+            )
+            db.session.add(cliente)
+            # db.session.commit() # Não commitamos ainda, tudo em uma transação no final
 
-    def __repr__(self):
-        return f"Andaime('{self.codigo}', '{self.status}')"
+        # 2. Preparar Dados da Locação
+        # Converte as datas de string para objetos date do Python
+        # Espera formato 'YYYY-MM-DD'
+        data_inicio = datetime.strptime(data['data_inicio_locacao'], '%Y-%m-%d').date()
 
-# Tabela locacoes
-class Locacao(db.Model):
-    __tablename__ = 'locacoes'
-    id = db.Column(db.Integer, primary_key=True)
-    
-    # Chave estrangeira para Cliente
-    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
-    
-    data_registro = db.Column(db.DateTime, nullable=False, default=datetime.utcnow) # Data e hora do registro
-    data_inicio_locacao = db.Column(db.Date, nullable=False) # Apenas a data de início da locação
-    dias_locacao = db.Column(db.Integer, nullable=False)
-    valor_total = db.Column(db.Float, nullable=False) # Float para REAL
-    status_pagamento = db.Column(db.String(50), nullable=False) # 'pago_a_vista', 'pendente_entrega', etc.
-    anotacoes = db.Column(db.Text) # Text para TEXT
+        nova_locacao = Locacao(
+            cliente=cliente, # Associa o objeto cliente
+            data_registro=datetime.utcnow(), # Data e hora atual do registro
+            data_inicio_locacao=data_inicio,
+            dias_locacao=data['dias_locacao'],
+            valor_total=data['valor_total'],
+            status_pagamento=data['status_pagamento'],
+            anotacoes=data.get('anotacoes', '') # Anotações são opcionais, valor padrão vazio
+        )
+        db.session.add(nova_locacao)
+        # db.session.commit() # Não commitamos ainda
 
-    # Relacionamento com LocacaoAndaime (tabela de junção)
-    andaimes_locados = db.relationship('LocacaoAndaime', backref='locacao', lazy=True)
+        # 3. Processar Andaimes Locados
+        codigos_andaimes = data['codigos_andaimes'] # Deve ser uma lista de códigos de andaimes, ex: ["AND-001", "AND-003"]
+        andaimes_para_locar = []
+        
+        if not codigos_andaimes:
+            return jsonify({"error": "Nenhum código de andaime fornecido para locação."}), 400
 
-    def __repr__(self):
-        return f"Locacao('{self.id}', Cliente ID: '{self.cliente_id}', '{self.data_registro}')"
+        for codigo in codigos_andaimes:
+            andaime = Andaime.query.filter_by(codigo=codigo).first()
+            if not andaime:
+                db.session.rollback() # Desfaz qualquer adição anterior
+                return jsonify({"error": f"Andaime com código '{codigo}' não encontrado."}), 404
+            
+            if andaime.status != 'disponivel':
+                db.session.rollback() # Desfaz qualquer adição anterior
+                return jsonify({"error": f"Andaime com código '{codigo}' não está disponível (status: {andaime.status})."}), 409 # 409 Conflict
 
-# Tabela de junção locacao_andaimes (para Many-to-Many)
-class LocacaoAndaime(db.Model):
-    __tablename__ = 'locacao_andaimes'
-    locacao_id = db.Column(db.Integer, db.ForeignKey('locacoes.id'), primary_key=True)
-    andaime_id = db.Column(db.Integer, db.ForeignKey('andaimes.id'), primary_key=True)
+            # Se o andaime está disponível, adiciona à lista e muda o status
+            andaimes_para_locar.append(andaime)
+            andaime.status = 'alugado' # ATUALIZA O STATUS DO ANDAIME
 
-    def __repr__(self):
-        return f"LocacaoAndaime(Locacao ID: {self.locacao_id}, Andaime ID: {self.andaime_id})"
+        # 4. Criar Entradas na Tabela de Junção (LocacaoAndaime)
+        for andaime in andaimes_para_locar:
+            locacao_andaime_entry = LocacaoAndaime(locacao=nova_locacao, andaime=andaime)
+            db.session.add(locacao_andaime_entry)
 
+        # --- Salvar todas as mudanças no banco de dados (Transação) ---
+        db.session.commit()
 
+        return jsonify({
+            "message": "Locação registrada com sucesso!",
+            "locacao_id": nova_locacao.id,
+            "cliente_id": cliente.id,
+            "andaimes_locados_count": len(codigos_andaimes)
+        }), 201 # 201 Created
+
+    except Exception as e:
+        db.session.rollback() # Em caso de erro, desfaz todas as operações no banco de dados
+        print(f"Erro ao registrar venda: {e}") # Para depuração
+        return jsonify({"error": "Ocorreu um erro ao registrar a venda.", "details": str(e)}), 500
+
+# ... (restante do seu app.py, incluindo o bloco if __name__ == '__main__':) ...
 
 
 if __name__ == '__main__':
     # --- Criação das Tabelas (APENAS PARA O PRIMEIRO SETUP OU RESET!) ---
-    # Este bloco é para criar as tabelas no banco de dados.
-    # Em um ambiente de produção, você usaria migrations (Flask-Migrate).
-    # Para desenvolvimento, pode rodar uma vez ou quando precisar resetar.
+    # Este bloco continua aqui. Ele precisa importar os modelos para que o db.create_all()
+    # saiba quais tabelas criar. Por isso, a importação em cima é crucial.
     with app.app_context():
         db.create_all()
         print("Tabelas criadas no banco de dados 'construara_1.db'!")

@@ -46,6 +46,7 @@ construara_1/
 ├── models.py               # Definição dos modelos do banco de dados (Cliente, Andaime, Locacao, LocacaoAndaime)
 
 ├── templates/              # Contém os arquivos HTML (páginas web)
+
     │   ├── index.html          # Página principal: Formulário de registro de locação
     │   └── locacoes.html       # Página para visualizar todas as locações
 

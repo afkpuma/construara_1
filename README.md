@@ -48,18 +48,18 @@ construara_1/
 
 ├── templates/              # Contém os arquivos HTML (páginas web)
 
-│   ├── index.html          # Página principal: Formulário de registro de locação (agora por tipo/quantidade)
-│   ├── locacoes.html       # Página para visualizar todas as locações
-│   └── adicionar_andaime.html # NOVA PÁGINA: Formulário para adicionar andaimes em massa
+    │   ├── index.html          # Página principal: Formulário de registro de locação (agora por tipo/quantidade)
+    │   ├── locacoes.html       # Página para visualizar todas as locações
+    │   └── adicionar_andaime.html # NOVA PÁGINA: Formulário para adicionar andaimes em massa
 
 ├── static/                 # Contém arquivos estáticos (CSS, JavaScript)
 
-│   ├── css/
-│   │   └── style.css       # Estilos CSS globais para as páginas
-│   └── js/
-│       ├── script.js       # Lógica JavaScript para o formulário de registro de locação
-│       ├── locacoes.js     # Lógica JavaScript para a página de visualização de locações
-│       └── adicionar_andaime.js # NOVO JS: Lógica para o formulário de adição de andaimes
+    │   ├── css/
+    │   │   └── style.css       # Estilos CSS globais para as páginas
+    │   └── js/
+    │       ├── script.js       # Lógica JavaScript para o formulário de registro de locação
+    │       ├── locacoes.js     # Lógica JavaScript para a página de visualização de locações
+    │       └── adicionar_andaime.js # NOVO JS: Lógica para o formulário de adição de andaimes
 
 ├── construara_1.db         # Banco de dados SQLite (gerado automaticamente)
 

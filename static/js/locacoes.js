@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const locacoesTable = document.getElementById('locacoesTable');
 
     try {
-        const response = await fetch('/locacoes');
+        // ALTERADO: URL da API para o Blueprint de locações
+        const response = await fetch('/locacoes/'); // Adicionado '/' no final para rota raiz do Blueprint
         const locacoes = await response.json();
 
         loadingMessage.style.display = 'none';

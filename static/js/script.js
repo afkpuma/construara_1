@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const data = {};
         for (let [key, value] of formData.entries()) {
-            // ALTERADO: 'quantidade' agora é um número
             if (key === 'dias_locacao' || key === 'valor_total' || key === 'quantidade') {
                 data[key] = parseFloat(value);
             } else {
@@ -22,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('/registrar_venda', {
+            // ALTERADO: URL da API para o Blueprint de locações
+            const response = await fetch('/locacoes/', { // Adicionado '/' no final para rota raiz do Blueprint
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

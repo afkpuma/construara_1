@@ -14,14 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {};
         for (let [key, value] of formData.entries()) {
             if (key === 'quantidade') {
-                data[key] = parseInt(value); // Quantidade como inteiro
+                data[key] = parseInt(value);
             } else {
                 data[key] = value;
             }
         }
 
         try {
-            const response = await fetch('/andaimes', { // Rota da sua API Flask para adicionar andaimes
+            // ALTERADO: URL da API para o Blueprint de andaimes
+            const response = await fetch('/andaimes/', { // Adicionado '/' no final para rota raiz do Blueprint
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 messageDiv.textContent = result.message || 'Andaimes adicionados com sucesso!';
                 messageDiv.classList.add('success');
-                form.reset(); // Limpa o formulário
+                form.reset();
             } else {
                 messageDiv.textContent = result.error || 'Erro ao adicionar andaimes.';
                 messageDiv.classList.add('error');

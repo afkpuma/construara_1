@@ -9,10 +9,7 @@
 <body>
     <div class="container">
         <div class="navbar">
-            <a href="{{ url_for('home') }}">Registrar Locação</a>
-            <a href="{{ url_for('get_locacoes_page') }}">Visualizar Locações</a>
-            <a href="{{ url_for('add_andaime_page') }}" class="active">Adicionar Andaimes</a>
-        </div>
+            <a href="{{ url_for('main.home') }}">Registrar Locação</a> <a href="{{ url_for('locacoes.view_locacoes_page') }}">Visualizar Locações</a> <a href="{{ url_for('andaimes.add_andaime_page') }}" class="active">Adicionar Andaimes</a> </div>
 
         <h1>Adicionar Andaimes ao Inventário</h1>
         <form id="addAndaimeForm">

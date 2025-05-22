@@ -7,17 +7,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const locacoesTable = document.getElementById('locacoesTable');
 
     try {
-        const response = await fetch('/locacoes'); // Rota da sua API Flask
+        const response = await fetch('/locacoes');
         const locacoes = await response.json();
 
-        loadingMessage.style.display = 'none'; // Esconde a mensagem de carregamento
+        loadingMessage.style.display = 'none';
 
         if (response.ok) {
             if (locacoes.length === 0) {
                 errorMessage.textContent = 'Nenhuma locação encontrada.';
                 errorMessage.style.display = 'block';
             } else {
-                locacoesTable.style.display = 'table'; // Mostra a tabela
+                locacoesTable.style.display = 'table';
                 locacoes.forEach(locacao => {
                     const row = locacoesTableBody.insertRow();
 
@@ -25,9 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     row.insertCell().textContent = locacao.cliente ? locacao.cliente.nome : 'N/A';
                     row.insertCell().textContent = locacao.cliente ? locacao.cliente.telefone : 'N/A';
                     
-                    // Formata as datas
                     const dataRegistro = new Date(locacao.data_registro).toLocaleDateString('pt-BR');
-                    const dataInicio = new Date(locacao.data_inicio_locacao + 'T00:00:00').toLocaleDateString('pt-BR'); // Adiciona T00:00:00 para garantir fuso horário
+                    const dataInicio = new Date(locacao.data_inicio_locacao + 'T00:00:00').toLocaleDateString('pt-BR');
                     row.insertCell().textContent = dataRegistro;
                     row.insertCell().textContent = dataInicio;
                     
@@ -35,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     row.insertCell().textContent = `R$ ${locacao.valor_total.toFixed(2).replace('.', ',')}`;
                     row.insertCell().textContent = locacao.status_pagamento;
                     
-                    // Andaimes Locados
                     const andaimesCell = row.insertCell();
                     if (locacao.andaimes && locacao.andaimes.length > 0) {
                         const andaimesList = locacao.andaimes.map(a => `${a.codigo} (${a.status})`).join(', ');

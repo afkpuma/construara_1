@@ -1,7 +1,7 @@
-// construara_1/static/js/script.js
+// construara_1/static/js/adicionar_andaime.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('locacaoForm');
+    const form = document.getElementById('addAndaimeForm');
     const messageDiv = document.getElementById('message');
 
     form.addEventListener('submit', async (event) => {
@@ -13,16 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const data = {};
         for (let [key, value] of formData.entries()) {
-            // ALTERADO: 'quantidade' agora é um número
-            if (key === 'dias_locacao' || key === 'valor_total' || key === 'quantidade') {
-                data[key] = parseFloat(value);
+            if (key === 'quantidade') {
+                data[key] = parseInt(value); // Quantidade como inteiro
             } else {
                 data[key] = value;
             }
         }
 
         try {
-            const response = await fetch('/registrar_venda', {
+            const response = await fetch('/andaimes', { // Rota da sua API Flask para adicionar andaimes
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -33,11 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                messageDiv.textContent = result.message || 'Locação registrada com sucesso!';
+                messageDiv.textContent = result.message || 'Andaimes adicionados com sucesso!';
                 messageDiv.classList.add('success');
-                form.reset();
+                form.reset(); // Limpa o formulário
             } else {
-                messageDiv.textContent = result.error || 'Erro ao registrar locação.';
+                messageDiv.textContent = result.error || 'Erro ao adicionar andaimes.';
                 messageDiv.classList.add('error');
                 console.error('Erro da API:', result.details || result.error);
             }

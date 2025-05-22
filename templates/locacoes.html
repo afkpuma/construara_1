@@ -5,58 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizar Locações - Construara_1</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        /* Estilos adicionais para a tabela */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .loading-message, .error-message {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1em;
-        }
-        .loading-message { color: #007bff; }
-        .error-message { color: #dc3545; }
-
-        /* Estilos para o menu de navegação */
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        .navbar a {
-            float: left;
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            text-decoration: none;
-        }
-        .navbar a:hover {
-            background-color: #575757;
-        }
-        .navbar a.active {
-            background-color: #007bff;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <div class="navbar">
             <a href="{{ url_for('home') }}">Registrar Locação</a>
             <a href="{{ url_for('get_locacoes_page') }}" class="active">Visualizar Locações</a>
-            </div>
+            <a href="{{ url_for('add_andaime_page') }}">Adicionar Andaimes</a>
+        </div>
 
         <h1>Visualizar Locações</h1>
         <div id="loadingMessage" class="loading-message">Carregando locações...</div>

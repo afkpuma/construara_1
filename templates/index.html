@@ -5,36 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Nova Locação - Construara_1</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        /* Estilos para o menu de navegação - Estes podem ser movidos para style.css depois */
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        .navbar a {
-            float: left;
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            text-decoration: none;
-        }
-        .navbar a:hover {
-            background-color: #575757;
-        }
-        .navbar a.active {
-            background-color: #007bff; /* Cor para a aba ativa */
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <div class="navbar">
             <a href="{{ url_for('home') }}" class="active">Registrar Locação</a>
             <a href="{{ url_for('get_locacoes_page') }}">Visualizar Locações</a>
-            </div>
+            <a href="{{ url_for('add_andaime_page') }}">Adicionar Andaimes</a>
+        </div>
+
         <h1>Registrar Nova Locação</h1>
         <form id="locacaoForm">
             <h2>Dados do Cliente</h2>
@@ -67,9 +46,16 @@
             <label for="anotacoes">Anotações:</label>
             <textarea id="anotacoes" name="anotacoes" rows="3"></textarea>
 
-            <h2>Andaimes Locados (códigos separados por vírgula)</h2>
-            <label for="codigos_andaimes">Ex: AND-001, AND-002</label>
-            <input type="text" id="codigos_andaimes" name="codigos_andaimes" required>
+            <h2>Andaimes a Locar</h2>
+            <label for="tipo_andaime_locar">Tipo de Andaime:</label>
+            <select id="tipo_andaime_locar" name="tipo" required>
+                <option value="">Selecione o Tipo</option>
+                <option value="Andaime Normal">Andaime Normal</option>
+                <option value="Andaime Menor">Andaime Menor</option>
+            </select>
+
+            <label for="quantidade_andaimes_locar">Quantidade:</label>
+            <input type="number" id="quantidade_andaimes_locar" name="quantidade" required min="1">
 
             <button type="submit">Registrar Locação</button>
         </form>

@@ -36,13 +36,13 @@ input[type="date"],
 input[type="number"],
 input[type="email"],
 textarea,
-select { /* Adicionado 'select' aqui */
-    width: calc(100% - 22px); /* Ajuste para padding */
+select {
+    width: calc(100% - 22px);
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-sizing: border-box; /* Garante que padding não aumente a largura total */
+    box-sizing: border-box;
 }
 
 button {
@@ -53,7 +53,7 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
-    width: 100%; /* Botão ocupa a largura total */
+    width: 100%;
 }
 
 button:hover {
@@ -79,3 +79,47 @@ button:hover {
     color: #721c24;
     border: 1px solid #f5c6cb;
 }
+
+/* NOVO: Estilos para a barra de navegação */
+.navbar {
+    background-color: #333;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+.navbar a {
+    float: left;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+}
+.navbar a:hover {
+    background-color: #575757;
+}
+.navbar a.active {
+    background-color: #007bff;
+}
+
+/* Estilos adicionais para a tabela (do locacoes.html) */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background-color: #f2f2f2;
+}
+.loading-message, .error-message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+.loading-message { color: #007bff; }
+.error-message { color: #dc3545; }

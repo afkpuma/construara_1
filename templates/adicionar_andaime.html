@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Andaimes - Construara_1</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="{{ url_for('home') }}">Registrar Locação</a>
+            <a href="{{ url_for('get_locacoes_page') }}">Visualizar Locações</a>
+            <a href="{{ url_for('add_andaime_page') }}" class="active">Adicionar Andaimes</a>
+        </div>
+
+        <h1>Adicionar Andaimes ao Inventário</h1>
+        <form id="addAndaimeForm">
+            <label for="tipo_andaime">Tipo de Andaime:</label>
+            <select id="tipo_andaime" name="tipo" required>
+                <option value="">Selecione o Tipo</option>
+                <option value="Andaime Normal">Andaime Normal</option>
+                <option value="Andaime Menor">Andaime Menor</option>
+            </select>
+
+            <label for="quantidade_andaimes">Quantidade:</label>
+            <input type="number" id="quantidade_andaimes" name="quantidade" required min="1">
+
+            <label for="status_andaime">Status Inicial (Opcional):</label>
+            <select id="status_andaime" name="status">
+                <option value="disponivel">Disponível</option>
+                <option value="manutencao">Em Manutenção</option>
+            </select>
+
+            <button type="submit">Adicionar Andaime(s)</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/adicionar_andaime.js') }}"></script>
+</body>
+</html>

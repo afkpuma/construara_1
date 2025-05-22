@@ -5,7 +5,7 @@
 ![GitHub contributors](https://img.shields.io/github/contributors/afkpuma/construara_1?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-## 📝 Descrição do Projeto
+## 📝 Descrição do Projeto em Desenvolvimento
 
 É um sistema simplificado para gerenciar a locação e devolução de andaimes. Desenvolvido com Flask (Python) para o backend e uma interface web básica em HTML, CSS e JavaScript, este projeto visa oferecer uma solução prática para o controle de inventário de andaimes e registro de locações de clientes. Recentemente, a arquitetura do backend foi refatorada para utilizar **Flask Blueprints** e uma **camada de serviços** dedicada, promovendo maior modularidade, organização e escalabilidade.
 

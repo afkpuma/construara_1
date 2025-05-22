@@ -11,10 +11,10 @@ O **construara_1** é um sistema simplificado para gerenciar a locação e devol
 
 ## ✨ Funcionalidades Atuais
 
-* **Registro de Locação:** Permite registrar novas locações de andaimes para clientes, associando múltiplos andaimes a uma única locação.
+* **Registro de Locação Simplificado:** Permite registrar novas locações de andaimes para clientes, agora especificando o **tipo e a quantidade** de andaimes desejados, em vez de códigos individuais. O sistema seleciona automaticamente os andaimes disponíveis.
 * **Devolução de Andaimes:** Gerencia a devolução de andaimes, atualizando o status dos itens para 'disponível' novamente.
 * **Visualização de Locações:** Exibe uma lista detalhada de todas as locações registradas, incluindo informações do cliente, datas, valores e os andaimes envolvidos.
-* **Cadastro de Andaimes:** Permite adicionar novos andaimes ao inventário do sistema através de uma rota de API.
+* **Cadastro de Andaimes em Massa:** Permite adicionar **múltiplos novos andaimes** ao inventário do sistema de uma vez, especificando o tipo (ex: "Andaime Normal", "Andaime Menor") e a quantidade. Os códigos dos andaimes são gerados automaticamente.
 * **Status de Andaimes:** Mantém o controle do status (`disponivel`, `alugado`, `manutencao`) de cada andaime.
 * **Listagem de Andaimes Disponíveis:** Fornece uma rota para consultar andaimes com status 'disponível'.
 * **Listagem de Clientes:** Rota para visualizar todos os clientes cadastrados.
@@ -38,6 +38,7 @@ O **construara_1** é um sistema simplificado para gerenciar a locação e devol
 
 ## 📦 Estrutura do Projeto
 
+
 construara_1/
 ├── app.py                  # Aplicação Flask principal, rotas e inicialização
 
@@ -47,16 +48,18 @@ construara_1/
 
 ├── templates/              # Contém os arquivos HTML (páginas web)
 
-    │   ├── index.html          # Página principal: Formulário de registro de locação
-    │   └── locacoes.html       # Página para visualizar todas as locações
+│   ├── index.html          # Página principal: Formulário de registro de locação (agora por tipo/quantidade)
+│   ├── locacoes.html       # Página para visualizar todas as locações
+│   └── adicionar_andaime.html # NOVA PÁGINA: Formulário para adicionar andaimes em massa
 
 ├── static/                 # Contém arquivos estáticos (CSS, JavaScript)
 
-    │   ├── css/
-    │   │   └── style.css       # Estilos CSS globais para as páginas
-    │   └── js/
-    │       ├── script.js       # Lógica JavaScript para o formulário de registro de locação (index.html)
-    │       └── locacoes.js     # Lógica JavaScript para a página de visualização de locações (locacoes.html)
+│   ├── css/
+│   │   └── style.css       # Estilos CSS globais para as páginas
+│   └── js/
+│       ├── script.js       # Lógica JavaScript para o formulário de registro de locação
+│       ├── locacoes.js     # Lógica JavaScript para a página de visualização de locações
+│       └── adicionar_andaime.js # NOVO JS: Lógica para o formulário de adição de andaimes
 
 ├── construara_1.db         # Banco de dados SQLite (gerado automaticamente)
 
@@ -107,6 +110,7 @@ Siga os passos abaixo para configurar e rodar o projeto **construara_1** em sua 
     Abra seu navegador e acesse:
     * **Página de Registro de Locações:** `http://127.0.0.1:5000/`
     * **Página de Visualização de Locações:** `http://127.0.0.1:5000/visualizar_locacoes`
+    * **Página de Adição de Andaimes:** `http://127.0.0.1:5000/adicionar_andaimes`
 
 ## ⚙️ Endpoints da API
 
@@ -118,6 +122,10 @@ A API do **construara_1** expõe os seguintes endpoints principais:
 
 ### `GET /visualizar_locacoes`
 * **Descrição:** Serve a página HTML (`locacoes.html`) para visualização de todas as locações registradas.
+* **Respostas:** Página HTML.
+
+### `GET /adicionar_andaimes`
+* **Descrição:** Serve a página HTML (`adicionar_andaime.html`) para adicionar novos andaimes ao inventário.
 * **Respostas:** Página HTML.
 
 ### `GET /status`
@@ -153,22 +161,22 @@ A API do **construara_1** expõe os seguintes endpoints principais:
     ```
 
 ### `POST /andaimes`
-* **Descrição:** Adiciona um novo andaime ao inventário.
+* **Descrição:** Adiciona **múltiplos novos andaimes** ao inventário com base no tipo e quantidade especificados. Códigos são gerados automaticamente (ex: NORMAL-0001, MENOR-0001).
 * **Corpo da Requisição (JSON):**
     ```json
     {
-      "codigo": "AND-XXX",
-      "descricao": "Descrição opcional do andaime",
-      "status": "disponivel"  // Opcional, padrão 'disponivel'
+      "tipo": "Andaime Normal",  // Ou "Andaime Menor"
+      "quantidade": 5,
+      "status": "disponivel"   // Opcional, padrão 'disponivel'
     }
     ```
 * **Respostas:**
-    * Sucesso (HTTP 201): `{"message": "Andaime adicionado com sucesso!", "id": 1, "codigo": "AND-XXX", "status": "disponivel"}`
-    * Erro (HTTP 400): `{"error": "O campo 'codigo' é obrigatório..."}`
-    * Conflito (HTTP 409): `{"error": "Andaime com código 'AND-XXX' já existe."}`
+    * Sucesso (HTTP 201): `{"message": "5 Andaime Normal(s) adicionados com sucesso!", "andaimes": ["NORMAL-0001", "NORMAL-0002", ...]}`
+    * Erro (HTTP 400): `{"error": "Campos 'tipo' e 'quantidade' são obrigatórios."}`
+    * Conflito (HTTP 409): `{"error": "Erro de unicidade: Um código de andaime gerado já existe. Tente novamente."}`
 
 ### `POST /registrar_venda`
-* **Descrição:** Registra uma nova locação de andaimes.
+* **Descrição:** Registra uma nova locação de andaimes, selecionando andaimes disponíveis com base no `tipo` e `quantidade` solicitados.
 * **Corpo da Requisição (JSON):**
     ```json
     {
@@ -180,12 +188,14 @@ A API do **construara_1** expõe os seguintes endpoints principais:
       "valor_total": 500.00,
       "status_pagamento": "pago_a_vista", // ou "pendente", "parcial"
       "anotacoes": "Observações sobre a locação", // Opcional
-      "codigos_andaimes": ["AND-001", "AND-002"]
+      "tipo": "Andaime Normal",  // Ou "Andaime Menor"
+      "quantidade": 2
     }
     ```
 * **Respostas:**
-    * Sucesso (HTTP 201): `{"message": "Locação registrada com sucesso!", "locacao_id": 1, "cliente_id": 1, "andaimes_locados_count": 2}`
-    * Erro (HTTP 400, 404, 409, 500) com mensagem de erro.
+    * Sucesso (HTTP 201): `{"message": "Locação registrada com sucesso!", "locacao_id": 1, "cliente_id": 1, "andaimes_locados": ["NORMAL-0001", "NORMAL-0002"]}`
+    * Erro (HTTP 400): `{"error": "Todos os campos obrigatórios..."}`
+    * Conflito (HTTP 409): `{"error": "Não há X andaime(s) do tipo 'Y' disponíveis para locação. Apenas Z disponíveis."}`
 
 ### `GET /locacoes`
 * **Descrição:** Retorna uma lista de todas as locações registradas com detalhes do cliente e dos andaimes associados.
@@ -210,14 +220,14 @@ A API do **construara_1** expõe os seguintes endpoints principais:
         "andaimes": [
           {
             "id": 1,
-            "codigo": "AND-001",
-            "descricao": "Andaime Básico 1.5x1.5",
+            "codigo": "NORMAL-0001",
+            "descricao": "Andaime Normal",
             "status": "alugado"
           },
           {
             "id": 2,
-            "codigo": "AND-002",
-            "descricao": "Andaime Básico 1.5x1.5",
+            "codigo": "NORMAL-0002",
+            "descricao": "Andaime Normal",
             "status": "alugado"
           }
         ]
@@ -230,33 +240,33 @@ A API do **construara_1** expõe os seguintes endpoints principais:
 * **Corpo da Requisição (JSON):**
     ```json
     {
-      "codigos_andaimes": ["AND-001", "AND-002"]
+      "codigos_andaimes": ["NORMAL-0001", "NORMAL-0002"]
     }
     ```
 * **Respostas:**
-    * Sucesso (HTTP 200): `{"message": "Devolução de andaime(s) registrada com sucesso!", "andaimes_devolvidos": ["AND-001", "AND-002"]}`
-    * Sucesso com ressalvas (HTTP 200): `{"message": "Processamento de devolução concluído com algumas ressalvas.", "andaimes_devolvidos_com_sucesso": ["AND-001"], "erros": ["Andaime com código 'AND-999' não encontrado.", "Andaime com código 'AND-003' já está disponível."]}
+    * Sucesso (HTTP 200): `{"message": "Devolução de andaime(s) registrada com sucesso!", "andaimes_devolvidos": ["NORMAL-0001", "NORMAL-0002"]}`
+    * Sucesso com ressalvas (HTTP 200): `{"message": "Processamento de devolução concluído com algumas ressalvas.", "andaimes_devolvidos_com_sucesso": ["NORMAL-0001"], "erros": ["Andaime com código 'AND-999' não encontrado.", "Andaime com código 'NORMAL-0003' já está disponível."]}
     * Erro (HTTP 400, 500) com mensagem de erro.
 
 ## 🗄️ Modelos de Dados (Database Schema)
 
 O banco de dados do **construara_1** é composto pelas seguintes tabelas:
 
-* **`Cliente`**: Informações sobre os clientes.
+* **`clientes`**: Informações sobre os clientes.
     * `id` (PK)
     * `nome`
     * `endereco`
     * `telefone`
 
-* **`Andaime`**: Detalhes dos andaimes disponíveis.
+* **`andaimes`**: Detalhes dos andaimes disponíveis.
     * `id` (PK)
     * `codigo` (Único)
-    * `descricao`
+    * `descricao` (agora representa o tipo, ex: "Andaime Normal")
     * `status` (e.g., 'disponivel', 'alugado', 'manutencao')
 
-* **`Locacao`**: Registros das locações de andaimes.
+* **`locacoes`**: Registros das locações de andaimes.
     * `id` (PK)
-    * `cliente_id` (FK para Cliente)
+    * `cliente_id` (FK para clientes)
     * `data_registro`
     * `data_inicio_locacao`
     * `dias_locacao`
@@ -264,10 +274,10 @@ O banco de dados do **construara_1** é composto pelas seguintes tabelas:
     * `status_pagamento` (e.g., 'pendente', 'pago_a_vista', 'parcial')
     * `anotacoes`
 
-* **`LocacaoAndaime`**: Tabela de junção (muitos-para-muitos) entre `Locacao` e `Andaime`, para registrar quais andaimes foram alugados em qual locação.
+* **`locacao_andaimes`**: Tabela de junção (muitos-para-muitos) entre `locacoes` e `andaimes`, para registrar quais andaimes foram alugados em qual locação.
     * `id` (PK)
-    * `locacao_id` (FK para Locacao)
-    * `andaime_id` (FK para Andaime)
+    * `locacao_id` (FK para locacoes)
+    * `andaime_id` (FK para andaimes)
 
 ## 🤝 Contribuições
 

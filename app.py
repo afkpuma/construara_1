@@ -20,14 +20,23 @@ from models import Cliente, Andaime, Locacao, LocacaoAndaime
 # --- Rotas ---
 @app.route('/')
 def home():
+    """
+    Rota principal que serve a página de registro de locações.
+    """
     return render_template('index.html')
 
 @app.route('/status', methods=['GET'])
 def get_status():
+    """
+    Rota de teste para verificar o status do aplicativo.
+    """
     return jsonify({"status": "ok", "message": "construara_1 API está online!"}), 200
 
 @app.route('/echo', methods=['POST'])
 def echo_data():
+    """
+    Rota de teste para ecoar dados recebidos via POST.
+    """
     if request.is_json:
         data = request.get_json()
         return jsonify({"received_data": data, "message": "Dados POST recebidos com sucesso!"}), 200
@@ -36,6 +45,9 @@ def echo_data():
 
 @app.route('/clientes', methods=['GET'])
 def get_clientes():
+    """
+    Retorna uma lista de todos os clientes registrados.
+    """
     clientes = Cliente.query.all()
     clientes_data = []
     for cliente in clientes:
@@ -49,6 +61,9 @@ def get_clientes():
 
 @app.route('/andaimes_disponiveis', methods=['GET'])
 def get_andaimes_disponiveis():
+    """
+    Retorna uma lista de todos os andaimes com status 'disponivel'.
+    """
     andaimes = Andaime.query.filter_by(status='disponivel').all()
     andaimes_data = []
     for andaime in andaimes:
@@ -60,104 +75,118 @@ def get_andaimes_disponiveis():
         })
     return jsonify(andaimes_data), 200
 
-# --- NOVA ROTA: Adicionar Andaime ---
+# --- ALTERADO: Rota para Adicionar Andaimes em Massa ---
 @app.route('/andaimes', methods=['POST'])
-def add_andaime():
+def add_andaimes_em_massa():
     """
-    Adiciona um novo andaime ao banco de dados.
-    Esperar JSON com 'codigo', 'descricao' (opcional), 'status' (opcional, padrão 'disponivel').
+    Adiciona vários andaimes ao sistema com base no tipo e quantidade.
+    Gera códigos únicos automaticamente.
+    Espera um JSON com 'tipo', 'quantidade' e 'status' (opcional, padrão 'disponivel').
     """
     data = request.get_json()
 
-    if 'codigo' not in data:
-        return jsonify({"error": "O campo 'codigo' é obrigatório para adicionar um andaime."}), 400
+    tipo = data.get('tipo')
+    quantidade = data.get('quantidade')
+    status = data.get('status', 'disponivel')
 
-    codigo = data['codigo']
-    descricao = data.get('descricao', '') # Descrição é opcional
-    status = data.get('status', 'disponivel') # Status padrão é 'disponivel'
+    if not tipo or not quantidade:
+        return jsonify({"error": "Campos 'tipo' e 'quantidade' são obrigatórios."}), 400
 
-    # Verifica se o código do andaime já existe
-    if Andaime.query.filter_by(codigo=codigo).first():
-        return jsonify({"error": f"Andaime com código '{codigo}' já existe."}), 409 # 409 Conflict
+    if tipo not in ['Andaime Normal', 'Andaime Menor']:
+        return jsonify({"error": "Tipo inválido. Escolha entre 'Andaime Normal' ou 'Andaime Menor'."}), 400
 
     try:
-        novo_andaime = Andaime(codigo=codigo, descricao=descricao, status=status)
-        db.session.add(novo_andaime)
+        andaimes_adicionados = []
+        prefixo_codigo = {
+            'Andaime Normal': 'NORMAL',
+            'Andaime Menor': 'MENOR'
+        }.get(tipo, 'AND')
+
+        for i in range(quantidade):
+            codigo_potencial = f"{prefixo_codigo}-{str(i + 1).zfill(4)}"
+            
+            # Aprimoramento: Verifica se o código já existe antes de adicionar
+            # Isso evita IntegrityError no commit para códigos já gerados
+            if Andaime.query.filter_by(codigo=codigo_potencial).first():
+                # Se o código já existe, tenta gerar um novo com um sufixo diferente
+                codigo_potencial = f"{prefixo_codigo}-{str(i + 1).zfill(4)}-{datetime.now().strftime('%f')}"
+                if Andaime.query.filter_by(codigo=codigo_potencial).first(): # Última tentativa
+                    return jsonify({"error": f"Não foi possível gerar um código único para o {i+1}º andaime do tipo '{tipo}'. Tente novamente."}), 500
+
+            novo_andaime = Andaime(codigo=codigo_potencial, descricao=tipo, status=status)
+            db.session.add(novo_andaime)
+            andaimes_adicionados.append(codigo_potencial)
+
         db.session.commit()
+
         return jsonify({
-            "message": "Andaime adicionado com sucesso!",
-            "id": novo_andaime.id,
-            "codigo": novo_andaime.codigo,
-            "status": novo_andaime.status
-        }), 201 # 201 Created
+            "message": f"{quantidade} {tipo}(s) adicionados com sucesso!",
+            "andaimes": andaimes_adicionados
+        }), 201
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Erro ao adicionar andaime.", "details": str(e)}), 500
+        # Captura IntegrityError especificamente para códigos duplicados se a verificação acima falhar
+        if "UNIQUE constraint failed" in str(e):
+            return jsonify({"error": "Erro de unicidade: Um código de andaime gerado já existe. Tente novamente.", "details": str(e)}), 409
+        return jsonify({"error": "Erro ao adicionar andaimes.", "details": str(e)}), 500
 
-
+# --- ALTERADO: Rota de Registro de Venda ---
 @app.route('/registrar_venda', methods=['POST'])
-def registrar_venda():
+def registrar_venda_refatorada():
     """
-    Rota para registrar uma nova venda/locação de andaimes no banco de dados.
-    Recebe dados em formato JSON.
+    Registra uma nova locação com base no tipo e quantidade de andaimes.
     """
     data = request.get_json()
 
-    required_fields = ['nome_cliente', 'telefone_cliente', 'data_inicio_locacao',
-                       'dias_locacao', 'valor_total', 'status_pagamento', 'codigos_andaimes']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"Campo '{field}' é obrigatório."}), 400
+    tipo = data.get('tipo')
+    quantidade = data.get('quantidade')
+    nome_cliente = data.get('nome_cliente')
+    telefone_cliente = data.get('telefone_cliente')
+    endereco_cliente = data.get('endereco_cliente') # NOVO: Pega o endereço
+    data_inicio_locacao = data.get('data_inicio_locacao')
+    dias_locacao = data.get('dias_locacao')
+    valor_total = data.get('valor_total')
+    status_pagamento = data.get('status_pagamento')
+    anotacoes = data.get('anotacoes', '') # NOVO: Pega anotações
+
+    if not all([tipo, quantidade, nome_cliente, telefone_cliente, data_inicio_locacao, dias_locacao, valor_total, status_pagamento]):
+        return jsonify({"error": "Todos os campos obrigatórios (tipo, quantidade, nome_cliente, telefone_cliente, data_inicio_locacao, dias_locacao, valor_total, status_pagamento) são necessários."}), 400
+
+    if tipo not in ['Andaime Normal', 'Andaime Menor']:
+        return jsonify({"error": "Tipo inválido. Escolha entre 'Andaime Normal' ou 'Andaime Menor'."}), 400
 
     try:
-        cliente = Cliente.query.filter_by(
-            nome=data['nome_cliente'],
-            telefone=data['telefone_cliente']
-        ).first()
+        # Aprimoramento: Verifica disponibilidade E FILTRA PELO TIPO
+        andaimes_disponiveis = Andaime.query.filter_by(
+            status='disponivel',
+            descricao=tipo # Filtra pelo tipo/descrição do andaime
+        ).limit(quantidade).all()
 
+        if len(andaimes_disponiveis) < quantidade:
+            return jsonify({"error": f"Não há {quantidade} andaime(s) do tipo '{tipo}' disponíveis para locação. Apenas {len(andaimes_disponiveis)} disponíveis."}), 409
+
+        cliente = Cliente.query.filter_by(nome=nome_cliente, telefone=telefone_cliente).first()
         if not cliente:
-            cliente = Cliente(
-                nome=data['nome_cliente'],
-                endereco=data.get('endereco_cliente'),
-                telefone=data['telefone_cliente']
-            )
+            # Aprimoramento: Inclui o endereço ao criar o cliente
+            cliente = Cliente(nome=nome_cliente, telefone=telefone_cliente, endereco=endereco_cliente)
             db.session.add(cliente)
-
-        data_inicio = datetime.strptime(data['data_inicio_locacao'], '%Y-%m-%d').date()
 
         nova_locacao = Locacao(
             cliente=cliente,
             data_registro=datetime.utcnow(),
-            data_inicio_locacao=data_inicio,
-            dias_locacao=data['dias_locacao'],
-            valor_total=data['valor_total'],
-            status_pagamento=data['status_pagamento'],
-            anotacoes=data.get('anotacoes', '')
+            data_inicio_locacao=datetime.strptime(data_inicio_locacao, '%Y-%m-%d').date(),
+            dias_locacao=dias_locacao,
+            valor_total=valor_total,
+            status_pagamento=status_pagamento,
+            anotacoes=anotacoes # NOVO: Adiciona anotações
         )
         db.session.add(nova_locacao)
 
-        codigos_andaimes = data['codigos_andaimes']
-        andaimes_para_locar = []
-
-        if not codigos_andaimes:
-            return jsonify({"error": "Nenhum código de andaime fornecido para locação."}), 400
-
-        for codigo in codigos_andaimes:
-            andaime = Andaime.query.filter_by(codigo=codigo).first()
-            if not andaime:
-                db.session.rollback()
-                return jsonify({"error": f"Andaime com código '{codigo}' não encontrado."}), 404
-
-            if andaime.status != 'disponivel':
-                db.session.rollback()
-                return jsonify({"error": f"Andaime com código '{codigo}' não está disponível (status: {andaime.status})."}), 409
-
-            andaimes_para_locar.append(andaime)
+        for andaime in andaimes_disponiveis:
             andaime.status = 'alugado'
-
-        for andaime in andaimes_para_locar:
-            locacao_andaime_entry = LocacaoAndaime(locacao=nova_locacao, andaime=andaime)
-            db.session.add(locacao_andaime_entry)
+            locacao_andaime = LocacaoAndaime(locacao=nova_locacao, andaime=andaime)
+            db.session.add(locacao_andaime)
 
         db.session.commit()
 
@@ -165,13 +194,13 @@ def registrar_venda():
             "message": "Locação registrada com sucesso!",
             "locacao_id": nova_locacao.id,
             "cliente_id": cliente.id,
-            "andaimes_locados_count": len(codigos_andaimes)
+            "andaimes_locados": [a.codigo for a in andaimes_disponiveis]
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        print(f"Erro ao registrar venda: {e}")
-        return jsonify({"error": "Ocorreu um erro ao registrar a venda.", "details": str(e)}), 500
+        print(f"Erro ao registrar locação: {e}")
+        return jsonify({"error": "Erro ao registrar locação.", "details": str(e)}), 500
 
 @app.route('/devolver_andaimes', methods=['PUT'])
 def devolver_andaimes():
@@ -221,52 +250,38 @@ def devolver_andaimes():
         db.session.rollback()
         print(f"Erro ao registrar devolução: {e}")
         return jsonify({"error": "Ocorreu um erro ao registrar a devolução.", "details": str(e)}), 500
-    
-# ... (código existente, incluindo as importações) ...
 
-# --- NOVA ROTA: Visualizar Todas as Locações Detalhadas ---
 @app.route('/locacoes', methods=['GET'])
 def get_locacoes():
     """
     Retorna uma lista de todas as locações com detalhes do cliente e dos andaimes.
     """
     locacoes = Locacao.query.all()
-    
     locacoes_data = []
     for locacao in locacoes:
-        locacoes_data.append(locacao.to_dict()) # Usa o novo método to_dict()
-
+        locacoes_data.append(locacao.to_dict())
     return jsonify(locacoes_data), 200
 
-# ... (restante do seu app.py, incluindo outras rotas e o bloco if __name__ == '__main__':) ...
-
-# ... (código existente no app.py) ...
-
-# --- NOVA ROTA: Servir a página de Visualização de Locações ---
+# --- NOVO: Rota para Servir a página de Visualização de Locações ---
 @app.route('/visualizar_locacoes', methods=['GET'])
 def get_locacoes_page():
+    """
+    Serve a página HTML para visualização de locações.
+    """
     return render_template('locacoes.html')
 
-# ... (resto do seu app.py) ...
+# --- NOVO: Rota para Servir a página de Adição de Andaimes ---
+@app.route('/adicionar_andaimes', methods=['GET'])
+def add_andaime_page():
+    """
+    Serve a página HTML para adicionar andaimes.
+    """
+    return render_template('adicionar_andaime.html')
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         print("Tabelas criadas no banco de dados 'construara_1.db'!")
-
-        # --- Bloco de adição de Andaimes de Teste (AGORA PODE SER REMOVIDO!) ---
-        # Remova ou comente este bloco COMPLETAMENTE, pois a nova rota /andaimes fará o trabalho.
-        # if Andaime.query.count() == 0:
-        #     print("Adicionando andaimes de teste...")
-        #     andaime1 = Andaime(codigo="AND-001", descricao="Andaime Básico 1.5x1.5", status="disponivel")
-        #     andaime2 = Andaime(codigo="AND-002", descricao="Andaime Básico 1.5x1.5", status="disponivel")
-        #     andaime3 = Andaime(codigo="AND-003", descricao="Andaime com Rodas", status="disponivel")
-            
-        #     db.session.add_all([andaime1, andaime2, andaime3])
-        #     db.session.commit()
-        #     print("Andaimes de teste adicionados com sucesso!")
-        # else:
-        #     print("Andaimes já existem no banco de dados, pulando adição de teste.")
-        # --- Fim do Bloco de Andaimes de Teste ---
-
+        # --- ALTERADO: Bloco de adição de Andaimes de Teste REMOVIDO ---
+        # Este bloco foi removido pois agora temos a rota POST /andaimes para adicionar andaimes.
     app.run(debug=True)

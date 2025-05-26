@@ -2,6 +2,7 @@
 from models import Andaime
 from extensions import db
 from sqlalchemy.exc import IntegrityError
+import uuid # NOVO: Importa o módulo uuid
 
 def get_all_andaimes_disponiveis():
     """Retorna todos os andaimes com status 'disponivel'."""
@@ -11,34 +12,31 @@ def get_all_andaimes_disponiveis():
 def add_andaimes_em_massa(tipo, quantidade, status='disponivel'):
     """
     Adiciona múltiplos andaimes do mesmo tipo ao inventário.
-    Gera códigos únicos baseados no tipo.
+    Gera códigos únicos usando UUIDs.
     """
     if not tipo or not isinstance(quantidade, int) or quantidade <= 0:
         raise ValueError("Tipo e quantidade são obrigatórios e quantidade deve ser um número inteiro positivo.")
 
     added_codes = []
     try:
-        # Pega o último número para o tipo, para garantir unicidade
-        last_andaime_of_type = Andaime.query.filter(Andaime.descricao == tipo) \
-                                           .order_by(Andaime.id.desc()) \
-                                           .first()
-        if last_andaime_of_type:
-            # Extrai o número do último código, ex: "NORMAL-0010" -> 10
-            try:
-                last_number_str = last_andaime_of_type.codigo.split('-')[-1]
-                last_number = int(last_number_str)
-            except (ValueError, IndexError):
-                last_number = 0 # Se o formato for inesperado, começa do zero
-        else:
-            last_number = 0
+        # Formata o tipo para o prefixo do código (ex: "Andaime Normal" -> "NORMAL")
+        # Usamos uma lógica mais robusta para o prefixo
+        prefix = ''.join(word[0].upper() for word in tipo.split() if word.isalpha())
+        if not prefix:
+            prefix = "AND" # Fallback se o tipo não gerar um prefixo alfabético
 
         for i in range(quantidade):
-            new_number = last_number + 1 + i
-            # Formata o tipo para o código (ex: "Andaime Normal" -> "NORMAL")
-            prefix = ''.join(word[0].upper() for word in tipo.split() if word.isalpha())
-            if not prefix: # Fallback para tipos sem letras
-                prefix = "AND"
-            codigo = f"{prefix}-{new_number:04d}" # Ex: ANDN-0001, ANDM-0001, AND-0001
+            # ALTERADO: Geração de código usando UUID
+            # Isso garante unicidade e remove a complexidade de sequências
+            codigo = f"{prefix}-{uuid.uuid4()}"
+
+            # Uma verificação extra, embora UUIDs sejam virtualmente únicos
+            if Andaime.query.filter_by(codigo=codigo).first():
+                # Em caso extremamente raro de colisão de UUID (ou se o prefixo for igual)
+                # Tenta gerar um novo UUID
+                codigo = f"{prefix}-{uuid.uuid4()}"
+                if Andaime.query.filter_by(codigo=codigo).first():
+                    raise ValueError(f"Falha ao gerar um código único para o andaime do tipo '{tipo}'.")
 
             andaime = Andaime(codigo=codigo, descricao=tipo, status=status)
             db.session.add(andaime)
@@ -47,7 +45,7 @@ def add_andaimes_em_massa(tipo, quantidade, status='disponivel'):
         return {"message": f"{quantidade} Andaime(s) do tipo '{tipo}' adicionados com sucesso!", "andaimes": added_codes}
     except IntegrityError:
         db.session.rollback()
-        raise ValueError("Erro de unicidade ao gerar código de andaime. Tente novamente.")
+        raise ValueError("Erro de unicidade ao adicionar andaime. Um código gerado pode já existir.")
     except Exception as e:
         db.session.rollback()
         raise e

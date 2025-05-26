@@ -7,8 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const locacoesTable = document.getElementById('locacoesTable');
 
     try {
-        // ALTERADO: URL da API para o Blueprint de locações
-        const response = await fetch('/locacoes/'); // Adicionado '/' no final para rota raiz do Blueprint
+        const response = await fetch('/locacoes/');
         const locacoes = await response.json();
 
         loadingMessage.style.display = 'none';
@@ -35,10 +34,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     row.insertCell().textContent = `R$ ${locacao.valor_total.toFixed(2).replace('.', ',')}`;
                     row.insertCell().textContent = locacao.status_pagamento;
                     
+                    // ALTERADO: Exibe a quantidade e o tipo de andaimes
                     const andaimesCell = row.insertCell();
-                    if (locacao.andaimes && locacao.andaimes.length > 0) {
-                        const andaimesList = locacao.andaimes.map(a => `${a.codigo} (${a.status})`).join(', ');
-                        andaimesCell.textContent = andaimesList;
+                    if (locacao.andaimes_info && locacao.andaimes_info.quantidade > 0) {
+                        andaimesCell.textContent = `${locacao.andaimes_info.quantidade} ${locacao.andaimes_info.tipo}(s)`;
                     } else {
                         andaimesCell.textContent = 'Nenhum andaime';
                     }

@@ -1,22 +1,18 @@
 # construara_1/app.py
-from flask import Flask
+from flask import Flask 
 from extensions import db
-import os # Importa o módulo os para lidar com variáveis de ambiente e caminhos de arquivo
-
-# Importa os Blueprints
 from routes.main_bp import main_bp
 from routes.clientes_bp import clientes_bp
 from routes.andaimes_bp import andaimes_bp
 from routes.locacoes_bp import locacoes_bp
 
+# IMPORTANTE: Importa os Modelos do Banco de Dados para que db.create_all() possa descobri-los
+from models import Cliente, Andaime, Locacao, LocacaoAndaime
+
 app = Flask(__name__)
 
-# --- Configuração do Banco de Dados PostgreSQL (via variável de ambiente Docker) ---
-# ALTERADO: Pega a URI do banco de dados da variável de ambiente DATABASE_URL
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///construara_1.db')
-# O segundo argumento ('sqlite:///construara_1.db') é um fallback para desenvolvimento local sem Docker,
-# mas com Docker, a variável DATABASE_URL será sempre definida.
-
+# --- Configuração do Banco de Dados MariaDB/MySQL (via XAMPP) ---
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost:3306/construara_1'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Associa o objeto 'app' com 'db'
@@ -30,9 +26,19 @@ app.register_blueprint(locacoes_bp)
 
 if __name__ == '__main__':
     with app.app_context():
-        # Quando rodando com Docker Compose, o banco de dados 'construara_1' já será criado
-        # pelo serviço 'db' e db.create_all() criará as tabelas dentro dele.
         db.create_all()
-        print("Tabelas criadas no banco de dados!") # Mensagem mais genérica
+        print("Tabelas criadas no banco de dados 'construara_1' (MariaDB/MySQL)!")
+
+        # --- Bloco de adição de Andaimes de Teste (Certifique-se de que está removido ou comentado) ---
+        # Remova ou comente este bloco COMPLETAMENTE, pois a nova rota /andaimes fará o trabalho.
+        # if Andaime.query.count() == 0:
+        #     print("Adicionando andaimes de teste...")
+        #     andaime1 = Andaime(codigo="AND-001", descricao="Andaime Básico 1.5x1.5", status="disponivel")
+        #     andaime2 = Andaime(codigo="AND-002", descricao="Andaime Básico 1.5x1.5", status="disponivel")
+        #     andaime3 = Andaime(codigo="AND-003", descricao="Andaime com Rodas", status="disponivel")
+        #     db.session.add_all([andaime1, andaime2, andaime3])
+        #     db.session.commit()
+        #     print("Andaimes de teste adicionados.")
+
     app.run(debug=True)
 
